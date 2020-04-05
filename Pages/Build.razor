@@ -1,0 +1,142 @@
+﻿@page "/builds/{id}"
+@using System.Text
+@using CIServerBlazor.Data
+
+@inject NavigationManager NavigationManager
+<h3>Build @Id</h3>
+<br />
+    <div class="row">
+        <div class="col-sm">
+            <h5>
+                Статус:
+                @if (worker.IsSearching)
+                {
+                    <span> Идёт поиск</span>
+                }
+                else if(worker.LastCommit.BuildResult && !worker.IsSearching)
+                {
+                    <span> Билд успешен</span>
+                }
+                else
+                {
+                    <span> Коммит найден</span>
+                }
+            </h5>
+        </div>
+        <div class="col-sm">
+            <h5>
+                Branch: @worker.BranchName
+            </h5>
+        </div>
+        <div class="col-sm">
+            <h5>
+                Коммитов в ветке: @worker.CountCommits
+            </h5>
+        </div>
+        @if (!worker.IsSearching)
+        {
+            <div class="col-sm">
+                <h5>
+                    Sha коммита: @worker.LastCommit.Sha
+                </h5>
+            </div>
+        }
+    </div>
+@if (!worker.IsSearching)
+{
+    <br />
+    <h4>Подробности коммита:</h4>
+    <div class="row">
+        <div class="col-sm">
+            Автор коммита: @worker.LastCommit.Author [@worker.LastCommit.AuthorEmail]
+        </div>
+        <div class="col-sm">
+            Краткое сообщение коммита: @worker.LastCommit.ShortMessage
+        </div>
+        <div class="col-sm">
+            Дата коммита: @worker.LastCommit.Time.ToShortDateString() @worker.LastCommit.Time.ToLongTimeString()
+        </div>
+        @if (!worker.LastCommit.BuildResult)
+        {
+            <div class="col-sm">
+                Статус отката коммита:
+                @if (worker.IsReverted)
+                {
+                    <span> Успешно</span>
+                }
+                else
+                {
+                    <span> Не удалось</span>
+                }
+            </div>
+        }
+    </div>
+    <div class="row">
+        <div class="col-sm">
+            <br />
+            <h4>Полное сообщение коммита:</h4>
+            @worker.LastCommit.FullMessage
+        </div>
+    </div>
+    <div>
+        <br />
+        <h4>Файлы:</h4>
+        @foreach (var file in worker.LastCommit.FilesInfo)
+        {
+            <span>@file</span> <br />
+        }
+    </div>
+    <br />
+    <h4>Родительские коммиты:</h4>
+    @GetParentsCode()
+}
+<br />
+<h4>Build Log:</h4>
+<textarea class="form-control" rows="15" readonly>@showedString</textarea>
+
+    @code {
+
+        [Parameter]
+        public string Id { get; set; }
+
+        protected override void OnInitialized()
+        {
+            Id ??= "default";
+            worker = BuildService.GetService().GetWorkerById(Id);
+            if (worker == null)
+            {
+                NavigationManager.NavigateTo("/");
+                return;
+            }
+            worker.OnLogUpdated += OnLogUpdate;
+            showedString = worker.FullBuildLog;
+        }
+
+        private MarkupString GetParentsCode()
+        {
+            return new MarkupString(Parents(worker.LastCommit.Parents, 0));
+        }
+
+        private string Parents(List<Commit> parents, int spaces)
+        {
+            var builder = new StringBuilder();
+            foreach (var parent in parents)
+            {
+                builder.Append($"<div class=\"d-inline-flex p-2 bg-secondary\" style=\"margin-left: {spaces}rem\">{parent.Sha}</div><br /><br />");
+                spaces += 5;
+                builder.Append(Parents(parent.Parents, spaces));
+                spaces = 0;
+            }
+            return builder.ToString();
+        }
+
+        private async void OnLogUpdate()
+        {
+            showedString = worker.FullBuildLog.ToString();
+
+            await InvokeAsync(StateHasChanged);
+        }
+
+        private GitWorker worker;
+        private string showedString;
+    }

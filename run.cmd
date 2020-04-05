@@ -1,0 +1,1 @@
+CIServerBlazor.exe gitUrl=%1 branch=%2 buildCmd=%3

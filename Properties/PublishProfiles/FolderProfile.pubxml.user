@@ -1,0 +1,28 @@
+<?xml version="1.0" encoding="utf-8"?>
+<!--
+Этот файл используется процессом публикации или упаковки вашего веб-проекта. Можно настроить поведение этого процесса,
+изменив этот файл MSBuild. Подробности см. на странице https://go.microsoft.com/fwlink/?LinkID=208121. 
+-->
+<Project ToolsVersion="4.0" xmlns="http://schemas.microsoft.com/developer/msbuild/2003">
+  <PropertyGroup>
+    <TimeStampOfAssociatedLegacyPublishXmlFile />
+    <_PublishTargetUrl>F:\1JetbrainsInternship\CIServerBlazor\bin\Release\netcoreapp3.1\publish\</_PublishTargetUrl>
+  </PropertyGroup>
+  <ItemGroup>
+    <File Include="Pages/Counter.razor">
+      <publishTime>04/01/2020 10:16:11</publishTime>
+    </File>
+    <File Include="Pages/Error.razor">
+      <publishTime>04/01/2020 10:16:19</publishTime>
+    </File>
+    <File Include="Pages/FetchData.razor">
+      <publishTime>04/01/2020 10:16:25</publishTime>
+    </File>
+    <File Include="Pages/Index.razor">
+      <publishTime>03/31/2020 23:36:56</publishTime>
+    </File>
+    <File Include="Pages/_Host.cshtml">
+      <publishTime>03/31/2020 15:27:47</publishTime>
+    </File>
+  </ItemGroup>
+</Project>

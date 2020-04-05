@@ -1,0 +1,54 @@
+﻿@page "/builds"
+@using CIServerBlazor.Data
+
+<h3>Builds</h3>
+
+@if (workers != null)
+{
+    <table class="table table-borderless">
+        <thead class="thead-dark">
+            <tr>
+                <th>Id</th>
+                <th>Url</th>
+                <th>Branch</th>
+                <th>Status</th>
+                <th>Time</th>
+            </tr>
+        </thead>
+        <tbody>
+            @foreach (var worker in workers)
+            {
+                <tr>
+                    <a href="/builds/@worker.Id">
+                        <th scope="row">@worker.Id</th>
+                        <td>@worker.GitUrl</td>
+                        <td>@worker.BranchName</td>
+                        @if (worker.IsSearching)
+                        {
+                            <td>Идёт поиск</td>
+                        }
+                        else
+                        {
+                            <td>Поиск завершён</td>
+                        }
+                        <td>@worker.StartTime.ToShortDateString() @worker.StartTime.ToLongTimeString()</td>
+                    </a>
+                </tr>
+            }
+        </tbody>
+    </table>
+}
+else
+{
+    <p><em>Loading...</em></p>
+}
+
+@code {
+
+    GitWorker[] workers;
+
+    protected override async Task OnInitializedAsync()
+    {
+        workers = await BuildService.GetService().GetBuildsHistoryAsync();
+    }
+}
