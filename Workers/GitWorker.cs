@@ -56,14 +56,17 @@ namespace CIServerBlazor.Workers
 				DirectoryInfo = Directory.CreateDirectory(PathToCurrentCommit);
 
 				Log("Start Cloning Repository...");
-				CommandLineExecute("git clone " + GitUrl + " -b " + BranchName + " --progress " + DirectoryInfo.FullName);
+				if (CommandLineExecute("git clone " + GitUrl + " -b " + BranchName + " --progress " +
+				                       DirectoryInfo.FullName) != 0)
+				{
+					Log("Cloning Failed");
+					return;
+				}
 				Log("Successfully Cloned");
-
 				Save();
-
 				Log("Files...");
 				foreach (var file in DirectoryInfo.GetFiles())
-				{ 
+				{
 					Log($"Name: {file.Name} Size: {file.Length} bytes");
 				}
 
@@ -108,11 +111,12 @@ namespace CIServerBlazor.Workers
 		private void Log(string str)
 		{
 			FullBuildLog += $"[{DateTime.Now.ToShortDateString()} {DateTime.Now.ToLongTimeString()}] {str}\n";
+			Console.WriteLine(str);
 
 			OnLogUpdated?.Invoke();
 		}
 
-		private int CommandLineExecute(string app, string cmd = null)
+		private int CommandLineExecute(string app, string path = null)
 		{
 			var appName = app.Split()[0];
 			var arguments = app.Substring(appName.Length);
@@ -126,7 +130,8 @@ namespace CIServerBlazor.Workers
 						CreateNoWindow = false,
 						RedirectStandardOutput = true,
 						RedirectStandardInput = true,
-						RedirectStandardError = true
+						RedirectStandardError = true,
+						WorkingDirectory = path
 					}
 			};
 
@@ -137,11 +142,6 @@ namespace CIServerBlazor.Workers
 
 			proc.BeginOutputReadLine();
 			proc.BeginErrorReadLine();
-
-			if (!string.IsNullOrEmpty(cmd))
-			{
-				proc.StandardInput.WriteLine(cmd);
-			}
 
 			proc.WaitForExit(6 * 60 * 1000);
 
@@ -208,7 +208,7 @@ namespace CIServerBlazor.Workers
 
 					Save();
 
-					var exitCode = CommandLineExecute("cmd", "cd " + DirectoryInfo.FullName + " & " + BuildCmd);
+					var exitCode = CommandLineExecute(BuildCmd,  DirectoryInfo.FullName);
 
 					if (exitCode == 0 && LastCommit?.BuildResult == false)
 					{
@@ -219,11 +219,11 @@ namespace CIServerBlazor.Workers
 
 						Save();
 
-						var revertCode = CommandLineExecute("cmd", $"cd {DirectoryInfo.FullName} & git checkout {BranchName} & git revert {LastCommit.Sha} --no-edit");
+						var revertCode = CommandLineExecute($"git checkout {BranchName} & git revert {LastCommit.Sha} --no-edit", DirectoryInfo.FullName);
 						
 						if (revertCode == 0)
 						{
-							CommandLineExecute("cmd", $"cd {DirectoryInfo.FullName} & git push");
+							CommandLineExecute("git push", DirectoryInfo.FullName);
 							IsReverted = true;
 							Log("Commit successfully reverted");
 						}
